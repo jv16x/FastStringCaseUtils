@@ -1,7 +1,7 @@
 unit FastStringCaseUtils;
 
 
-// FastStringCaseUtils version 1.1
+// FastStringCaseUtils version 1.2
 //
 // A fast, unicode compatible string to uppercase and lowercase library
 //
@@ -21,7 +21,7 @@ unit FastStringCaseUtils;
 
 interface
 
-{$DEFINE Debug_ReferenceMode_DoubleCheckResults}
+{.$DEFINE Debug_ReferenceMode_DoubleCheckResults}
 {$DEFINE Debug_PerformSelftestOnInit}
 
 
@@ -87,29 +87,39 @@ begin
   len := Length(Str);
   if len = 0 then EXIT('');
 
-
-  idx_1 := 1;
-  while (idx_1 < len) and
-        ((Str[idx_1].IsWhiteSpace) or
-         (GLOB_LowCaseOrdTable[Str[idx_1]] <= 32)) do Inc(idx_1);
-
-  idx_2 := len;
-
-  while (idx_2 > idx_1) and
-        ((Str[idx_2].IsWhiteSpace) or
-        (GLOB_LowCaseOrdTable[Str[idx_2]] <= 32)) do Dec(idx_2);
-
-  if idx_2 <= idx_1 then EXIT('');
-
-
-  SetLength(Result, len - (len - idx_2) - (idx_1 - 1));
-
-  i := 1;
-  for j := idx_1 to idx_2 do
+  if len = 1 then
   begin
-    Result[i] := GLOB_CharLowCaseTable[Str[j]];
-    Inc(i);
+    if (Str[1].IsWhiteSpace) or
+       (GLOB_LowCaseOrdTable[Str[1]] <= 32) then EXIT('');
+
+    SetLength(Result, 1);
+    Result[1] := GLOB_CharLowCaseTable[Str[1]];
+  end else
+  begin
+
+    idx_1 := 1;
+    while (idx_1 <= len) and
+          ((Str[idx_1].IsWhiteSpace) or
+           (GLOB_LowCaseOrdTable[Str[idx_1]] <= 32)) do Inc(idx_1);
+
+    if idx_1 > len then EXIT('');
+    idx_2 := len;
+
+    while (idx_2 > idx_1) and
+          ((Str[idx_2].IsWhiteSpace) or
+          (GLOB_LowCaseOrdTable[Str[idx_2]] <= 32)) do Dec(idx_2);
+
+    SetLength(Result, len - (len - idx_2) - (idx_1 - 1));
+
+    i := 1;
+    for j := idx_1 to idx_2 do
+    begin
+      Result[i] := GLOB_CharLowCaseTable[Str[j]];
+      Inc(i);
+    end;
   end;
+
+
 
  {$IFDEF Debug_ReferenceMode_DoubleCheckResults}
   Assert(AnsiLowerCase(Trim(Str)) = Result, 'FastLowerCase_Trim Debug_ReferenceMode_DoubleCheckResults Fail: ' + Result);
@@ -164,6 +174,7 @@ end;
 
 
 // A faster version of AnsiUpperCase(Trim())
+// If TrimAllUnderOrd32, all characters with Ord() code <= 32 will be trimmed
 function FastUpperCase_Trim(const Str : String): String;
 var
   i   : Integer;
@@ -176,28 +187,40 @@ begin
   len := Length(Str);
   if len = 0 then EXIT('');
 
-  idx_1 := 1;
-  while (idx_1 < len) and
-        ((Str[idx_1].IsWhiteSpace) or
-         (GLOB_LowCaseOrdTable[Str[idx_1]] <= 32)) do Inc(idx_1);
-
-  idx_2 := len;
-
-  while (idx_2 > idx_1) and
-        ((Str[idx_2].IsWhiteSpace) or
-        (GLOB_LowCaseOrdTable[Str[idx_2]] <= 32)) do Dec(idx_2);
-
-  if idx_2 <= idx_1 then EXIT('');
-
-
-  SetLength(Result, len - (len - idx_2) - (idx_1 - 1));
-
-  i := 1;
-  for j := idx_1 to idx_2 do
+  if len = 1 then
   begin
-    Result[i] := GLOB_CharUpCaseTable[Str[j]];
-    Inc(i);
+    if (Str[1].IsWhiteSpace) or
+       (GLOB_LowCaseOrdTable[Str[1]] <= 32) then EXIT('');
+
+    SetLength(Result, 1);
+    Result[1] := GLOB_CharUpCaseTable[Str[1]];
+  end else
+  begin
+
+    idx_1 := 1;
+    while (idx_1 <= len) and
+          ((Str[idx_1].IsWhiteSpace) or
+           (GLOB_LowCaseOrdTable[Str[idx_1]] <= 32)) do Inc(idx_1);
+
+    if idx_1 > len then EXIT('');
+    idx_2 := len;
+
+    while (idx_2 > idx_1) and
+          ((Str[idx_2].IsWhiteSpace) or
+          (GLOB_LowCaseOrdTable[Str[idx_2]] <= 32)) do Dec(idx_2);
+
+    SetLength(Result, len - (len - idx_2) - (idx_1 - 1));
+
+    i := 1;
+    for j := idx_1 to idx_2 do
+    begin
+      Result[i] := GLOB_CharUpCaseTable[Str[j]];
+      Inc(i);
+    end;
   end;
+
+
+
 
  {$IFDEF Debug_ReferenceMode_DoubleCheckResults}
  Assert(AnsiUpperCase(Trim(Str)) = Result, 'FastUpperCase_Trim Debug_ReferenceMode_DoubleCheckResults Fail: ' + Result);
@@ -257,6 +280,65 @@ begin
 
   Assert( FastLowerCase_Trim(#3 + ' Fööbär ' + #2) = 'fööbär', 'SelfTest_FastStringCaseUtils Fail-31');
   Assert( FastUpperCase_Trim(#3 + ' Fööbär ' + #2) = 'FÖÖBÄR', 'SelfTest_FastStringCaseUtils Fail-32');
+
+  Assert( FastLowerCase('c') = 'c', 'SelfTest_FastStringCaseUtils Fail-33');
+  Assert( FastUpperCase('c') = 'C', 'SelfTest_FastStringCaseUtils Fail-34');
+  Assert( FastLowerCase('C') = 'c', 'SelfTest_FastStringCaseUtils Fail-35');
+  Assert( FastUpperCase('C') = 'C', 'SelfTest_FastStringCaseUtils Fail-36');
+
+  Assert( FastLowerCase_Trim('c') = 'c', 'SelfTest_FastStringCaseUtils Fail-37');
+  Assert( FastUpperCase_Trim('c') = 'C', 'SelfTest_FastStringCaseUtils Fail-38');
+  Assert( FastLowerCase_Trim('C') = 'c', 'SelfTest_FastStringCaseUtils Fail-39');
+  Assert( FastUpperCase_Trim('C') = 'C', 'SelfTest_FastStringCaseUtils Fail-40');
+
+  Assert( FastLowerCase('cÖ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-41');
+  Assert( FastUpperCase('cÖ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-42');
+  Assert( FastLowerCase('CÖ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-43');
+  Assert( FastUpperCase('CÖ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-44');
+
+  Assert( FastLowerCase_Trim('cÖ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-45');
+  Assert( FastUpperCase_Trim('cÖ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-46');
+  Assert( FastLowerCase_Trim('CÖ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-47');
+  Assert( FastUpperCase_Trim('CÖ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-48');
+
+  Assert( FastLowerCase_Trim('cÖ ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-49');
+  Assert( FastUpperCase_Trim('cÖ ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-50');
+  Assert( FastLowerCase_Trim('CÖ ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-51');
+  Assert( FastUpperCase_Trim('CÖ ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-52');
+
+  Assert( FastLowerCase_Trim(' cÖ ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-53');
+  Assert( FastUpperCase_Trim(' cÖ ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-54');
+  Assert( FastLowerCase_Trim(' CÖ ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-55');
+  Assert( FastUpperCase_Trim(' CÖ ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-56');
+
+  Assert( FastLowerCase_Trim(' cÖ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-57');
+  Assert( FastUpperCase_Trim(' cÖ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-58');
+  Assert( FastLowerCase_Trim(' CÖ') = 'cö', 'SelfTest_FastStringCaseUtils Fail-59');
+  Assert( FastUpperCase_Trim(' CÖ') = 'CÖ', 'SelfTest_FastStringCaseUtils Fail-60');
+
+  Assert( FastLowerCase_Trim('Ö ') = 'ö', 'SelfTest_FastStringCaseUtils Fail-61');
+  Assert( FastUpperCase_Trim('Ö ') = 'Ö', 'SelfTest_FastStringCaseUtils Fail-62');
+  Assert( FastLowerCase_Trim('Ö ') = 'ö', 'SelfTest_FastStringCaseUtils Fail-63');
+  Assert( FastUpperCase_Trim('Ö ') = 'Ö', 'SelfTest_FastStringCaseUtils Fail-64');
+
+  Assert( FastLowerCase_Trim(' Ö ') = 'ö', 'SelfTest_FastStringCaseUtils Fail-65');
+  Assert( FastUpperCase_Trim(' Ö ') = 'Ö', 'SelfTest_FastStringCaseUtils Fail-66');
+  Assert( FastLowerCase_Trim(' Ö ') = 'ö', 'SelfTest_FastStringCaseUtils Fail-67');
+  Assert( FastUpperCase_Trim(' Ö ') = 'Ö', 'SelfTest_FastStringCaseUtils Fail-68');
+
+  Assert( FastLowerCase_Trim(' Ö') = 'ö', 'SelfTest_FastStringCaseUtils Fail-69');
+  Assert( FastUpperCase_Trim(' Ö') = 'Ö', 'SelfTest_FastStringCaseUtils Fail-70');
+  Assert( FastLowerCase_Trim(' Ö') = 'ö', 'SelfTest_FastStringCaseUtils Fail-71');
+  Assert( FastUpperCase_Trim(' Ö') = 'Ö', 'SelfTest_FastStringCaseUtils Fail-72');
+
+  Assert( FastLowerCase_Trim(#9) = '', 'SelfTest_FastStringCaseUtils Fail-73');
+  Assert( FastUpperCase_Trim(#9) = '', 'SelfTest_FastStringCaseUtils Fail-74');
+
+  Assert( FastLowerCase_Trim(#9 + #9) = '', 'SelfTest_FastStringCaseUtils Fail-75');
+  Assert( FastUpperCase_Trim(#9 + #9) = '', 'SelfTest_FastStringCaseUtils Fail-76');
+
+  Assert( FastLowerCase_Trim(#9 + #9 + #9) = '', 'SelfTest_FastStringCaseUtils Fail-77');
+  Assert( FastUpperCase_Trim(#9 + #9 + #9) = '', 'SelfTest_FastStringCaseUtils Fail-78');
 
 end;
 
