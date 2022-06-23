@@ -1,7 +1,7 @@
 unit FastStringCaseUtils;
 
 
-// FastStringCaseUtils version 1.0
+// FastStringCaseUtils version 1.1
 //
 // A fast, unicode compatible string to uppercase and lowercase library
 //
@@ -10,6 +10,8 @@ unit FastStringCaseUtils;
 // https://jv16powertools.com
 //
 // Latest version available at: https://github.com/jv16x/FastStringCaseUtils
+// and
+// https://sourceforge.net/p/faststringcaseutils/
 //
 // Licensed under MIT open source license.
 
@@ -43,7 +45,6 @@ type
 
   // A faster version of AnsiUpperCase()
   function FastUpperCase(const Str : String): String;
-
 
   // A faster version of AnsiLowerCase(Trim())
   function FastLowerCase_Trim(const Str : String): String;
@@ -86,11 +87,17 @@ begin
   len := Length(Str);
   if len = 0 then EXIT('');
 
+
   idx_1 := 1;
-  while (idx_1 < len) and (Str[idx_1].IsWhiteSpace) do Inc(idx_1);
+  while (idx_1 < len) and
+        ((Str[idx_1].IsWhiteSpace) or
+         (GLOB_LowCaseOrdTable[Str[idx_1]] <= 32)) do Inc(idx_1);
 
   idx_2 := len;
-  while (idx_2 > idx_1) and (Str[idx_2].IsWhiteSpace) do Dec(idx_2);
+
+  while (idx_2 > idx_1) and
+        ((Str[idx_2].IsWhiteSpace) or
+        (GLOB_LowCaseOrdTable[Str[idx_2]] <= 32)) do Dec(idx_2);
 
   if idx_2 <= idx_1 then EXIT('');
 
@@ -157,6 +164,7 @@ end;
 
 
 // A faster version of AnsiUpperCase(Trim())
+// If TrimAllUnderOrd32, all characters with Ord() code <= 32 will be trimmed
 function FastUpperCase_Trim(const Str : String): String;
 var
   i   : Integer;
@@ -170,10 +178,15 @@ begin
   if len = 0 then EXIT('');
 
   idx_1 := 1;
-  while (idx_1 < len) and (Str[idx_1].IsWhiteSpace) do Inc(idx_1);
+  while (idx_1 < len) and
+        ((Str[idx_1].IsWhiteSpace) or
+         (GLOB_LowCaseOrdTable[Str[idx_1]] <= 32)) do Inc(idx_1);
 
   idx_2 := len;
-  while (idx_2 > idx_1) and (Str[idx_2].IsWhiteSpace) do Dec(idx_2);
+
+  while (idx_2 > idx_1) and
+        ((Str[idx_2].IsWhiteSpace) or
+        (GLOB_LowCaseOrdTable[Str[idx_2]] <= 32)) do Dec(idx_2);
 
   if idx_2 <= idx_1 then EXIT('');
 
@@ -188,7 +201,7 @@ begin
   end;
 
  {$IFDEF Debug_ReferenceMode_DoubleCheckResults}
-  Assert(AnsiUpperCase(Trim(Str)) = Result, 'FastUpperCase_Trim Debug_ReferenceMode_DoubleCheckResults Fail: ' + Result);
+ Assert(AnsiUpperCase(Trim(Str)) = Result, 'FastUpperCase_Trim Debug_ReferenceMode_DoubleCheckResults Fail: ' + Result);
  {$ENDIF}
 
 end;
@@ -231,17 +244,20 @@ begin
   Assert( FastLowerCase_Trim('   Fööbär   ') = 'fööbär', 'SelfTest_FastStringCaseUtils Fail-21');
   Assert( FastUpperCase_Trim('   Fööbär   ') = 'FÖÖBÄR', 'SelfTest_FastStringCaseUtils Fail-22');
 
-  Assert( FastLowerCase_Trim(#9 + ' Fööbär ' + #9) = 'fööbär', 'SelfTest_FastStringCaseUtils Fail-23');
-  Assert( FastUpperCase_Trim(#9 + ' Fööbär ' + #9) = 'FÖÖBÄR', 'SelfTest_FastStringCaseUtils Fail-24');
+  Assert( FastLowerCase_Trim(#9 + ' Fööbär ' + #9 + #0) = 'fööbär', 'SelfTest_FastStringCaseUtils Fail-23');
+  Assert( FastUpperCase_Trim(#9 + ' Fööbär ' + #9 + #0) = 'FÖÖBÄR', 'SelfTest_FastStringCaseUtils Fail-24');
 
-  Assert( FastLowerCase_Trim('  ' + #9) = '', 'SelfTest_FastStringCaseUtils Fail-25');
-  Assert( FastUpperCase_Trim('  ' + #9) = '', 'SelfTest_FastStringCaseUtils Fail-26');
+  Assert( FastLowerCase_Trim('  ' + #9 + #0) = '', 'SelfTest_FastStringCaseUtils Fail-25');
+  Assert( FastUpperCase_Trim('  ' + #9 + #0) = '', 'SelfTest_FastStringCaseUtils Fail-26');
 
   Assert( FastLowerCase('') = '', 'SelfTest_FastStringCaseUtils Fail-27');
   Assert( FastUpperCase('') = '', 'SelfTest_FastStringCaseUtils Fail-28');
 
   Assert( FastLowerCase_Trim('') = '', 'SelfTest_FastStringCaseUtils Fail-29');
   Assert( FastUpperCase_Trim('') = '', 'SelfTest_FastStringCaseUtils Fail-30');
+
+  Assert( FastLowerCase_Trim(#3 + ' Fööbär ' + #2) = 'fööbär', 'SelfTest_FastStringCaseUtils Fail-31');
+  Assert( FastUpperCase_Trim(#3 + ' Fööbär ' + #2) = 'FÖÖBÄR', 'SelfTest_FastStringCaseUtils Fail-32');
 
 end;
 
