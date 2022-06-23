@@ -164,7 +164,6 @@ end;
 
 
 // A faster version of AnsiUpperCase(Trim())
-// If TrimAllUnderOrd32, all characters with Ord() code <= 32 will be trimmed
 function FastUpperCase_Trim(const Str : String): String;
 var
   i   : Integer;
